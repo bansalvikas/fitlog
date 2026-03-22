@@ -1,7 +1,8 @@
 import { createContext, useState, useEffect, type ReactNode } from 'react'
 import {
   onAuthStateChanged,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut as firebaseSignOut,
 } from 'firebase/auth'
 import { doc, setDoc, getDoc } from 'firebase/firestore'
@@ -13,6 +14,7 @@ interface AuthContextValue {
   loading: boolean
   signInWithGoogle: () => Promise<void>
   signOut: () => Promise<void>
+  authError: string | null
 }
 
 export const AuthContext = createContext<AuthContextValue>({
@@ -20,13 +22,22 @@ export const AuthContext = createContext<AuthContextValue>({
   loading: true,
   signInWithGoogle: async () => {},
   signOut: async () => {},
+  authError: null,
 })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null)
   const [loading, setLoading] = useState(true)
+  const [authError, setAuthError] = useState<string | null>(null)
 
   useEffect(() => {
+    // Check for redirect result first
+    getRedirectResult(auth)
+      .catch((error) => {
+        console.error('Redirect result error:', error)
+        setAuthError(`Auth error: ${error.code} — ${error.message}`)
+      })
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const appUser: AppUser = {
@@ -60,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         setUser(appUser)
+        setAuthError(null)
       } else {
         setUser(null)
       }
@@ -70,13 +82,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signInWithGoogle = async () => {
+    setAuthError(null)
     try {
-      await signInWithPopup(auth, googleProvider)
+      await signInWithRedirect(auth, googleProvider)
     } catch (error: unknown) {
       const err = error as { code?: string; message?: string }
-      if (err.code === 'auth/popup-closed-by-user') return
-      if (err.code === 'auth/cancelled-popup-request') return
       console.error('Google sign-in error:', err)
+      setAuthError(`${err.code}: ${err.message}`)
       throw error
     }
   }
@@ -87,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signOut, authError }}>
       {children}
     </AuthContext.Provider>
   )

@@ -3,17 +3,15 @@ import { Dumbbell } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 
 export function LoginPage() {
-  const { signInWithGoogle } = useAuth()
+  const { signInWithGoogle, authError } = useAuth()
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   const handleSignIn = async () => {
     setLoading(true)
-    setError(null)
     try {
       await signInWithGoogle()
     } catch {
-      setError('Sign-in failed. Please try again.')
+      // Error is handled by AuthContext
     } finally {
       setLoading(false)
     }
@@ -54,11 +52,11 @@ export function LoginPage() {
             fill="#EA4335"
           />
         </svg>
-        {loading ? 'Signing in…' : 'Continue with Google'}
+        {loading ? 'Redirecting…' : 'Continue with Google'}
       </button>
 
-      {error && (
-        <p className="text-red-400 text-sm mt-3 text-center">{error}</p>
+      {authError && (
+        <p className="text-red-400 text-xs mt-3 text-center max-w-xs break-all">{authError}</p>
       )}
 
       <p className="text-slate-600 text-xs mt-8 text-center max-w-xs">
