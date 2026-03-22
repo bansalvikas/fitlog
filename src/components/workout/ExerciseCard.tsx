@@ -1,11 +1,13 @@
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, TrendingUp } from 'lucide-react'
 import type { WorkoutEntry } from '../../types'
+import type { OverloadSuggestion } from '../../hooks/useOverloadSuggestion'
 import { StrengthSetRow } from './StrengthSetRow'
 import { CardioEntryForm } from './CardioEntryForm'
 import { Card } from '../ui/Card'
 
 interface ExerciseCardProps {
   entry: WorkoutEntry
+  overloadSuggestion?: OverloadSuggestion | null
   onAddSet: (entryId: string) => void
   onRemoveExercise: (entryId: string) => void
   onUpdateSet: (entryId: string, setNumber: number, field: 'weight' | 'reps', value: number) => void
@@ -15,6 +17,7 @@ interface ExerciseCardProps {
 
 export function ExerciseCard({
   entry,
+  overloadSuggestion,
   onAddSet,
   onRemoveExercise,
   onUpdateSet,
@@ -25,6 +28,16 @@ export function ExerciseCard({
 
   return (
     <Card className="overflow-hidden">
+      {/* Progressive overload suggestion */}
+      {overloadSuggestion && (
+        <div className="flex items-start gap-2 mb-3 px-2.5 py-2 rounded-lg bg-emerald-950/50 border border-emerald-800/30">
+          <TrendingUp size={14} className="text-emerald-400 mt-0.5 shrink-0" />
+          <p className="text-[11px] text-emerald-300 leading-relaxed">
+            {overloadSuggestion.message}
+          </p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div>

@@ -88,6 +88,25 @@ export function useWorkoutHistory() {
     }).length
   }, [workouts])
 
+  /** Smart Recall: find the most recent entry for a given exercise from completed workouts */
+  const getLastExerciseData = useCallback(
+    (exerciseId: string) => {
+      for (const w of workouts) {
+        if (w.status !== 'completed') continue
+        const entry = w.entries.find((e) => e.exerciseId === exerciseId)
+        if (entry) {
+          return {
+            sets: entry.sets.filter((s) => s.completed),
+            duration: entry.duration,
+            distance: entry.distance,
+          }
+        }
+      }
+      return null
+    },
+    [workouts]
+  )
+
   return {
     workouts,
     summaries,
@@ -96,5 +115,6 @@ export function useWorkoutHistory() {
     saveWorkout,
     deleteWorkout,
     getWorkoutById,
+    getLastExerciseData,
   }
 }

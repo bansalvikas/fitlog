@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Moon, Sun, Monitor, ChevronRight, LogOut } from 'lucide-react'
+import { Moon, Sun, Monitor, ChevronRight, LogOut, FileJson, FileSpreadsheet } from 'lucide-react'
 import { Header } from '../components/layout/Header'
 import { Card } from '../components/ui/Card'
 import { useAuth } from '../hooks/useAuth'
+import { useWorkoutHistory } from '../hooks/useWorkoutHistory'
+import { useRoutines } from '../hooks/useRoutines'
+import { exportAsJson, exportAsCsv } from '../lib/exportData'
 import type { ThemeMode } from '../types'
 
 function getTheme(): ThemeMode {
@@ -27,6 +30,8 @@ export function SettingsPage() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
   const [theme, setThemeState] = useState<ThemeMode>(getTheme)
+  const { workouts } = useWorkoutHistory()
+  const { routines } = useRoutines()
 
   const handleThemeChange = (mode: ThemeMode) => {
     setThemeState(mode)
@@ -99,6 +104,32 @@ export function SettingsPage() {
               <p className="text-xs text-slate-500">Create and edit workout templates</p>
             </div>
             <ChevronRight size={16} className="text-slate-600" />
+          </div>
+        </Card>
+
+        {/* Data Export */}
+        <Card>
+          <h3 className="text-sm font-medium text-slate-400 mb-3">Export Data</h3>
+          <p className="text-xs text-slate-500 mb-3">
+            Download your workout history and routines.
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => exportAsJson(workouts, routines)}
+              disabled={workouts.length === 0}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-sm font-medium hover:bg-slate-700 active:scale-[0.97] transition-all disabled:opacity-40 disabled:pointer-events-none"
+            >
+              <FileJson size={16} />
+              JSON
+            </button>
+            <button
+              onClick={() => exportAsCsv(workouts)}
+              disabled={workouts.length === 0}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-sm font-medium hover:bg-slate-700 active:scale-[0.97] transition-all disabled:opacity-40 disabled:pointer-events-none"
+            >
+              <FileSpreadsheet size={16} />
+              CSV
+            </button>
           </div>
         </Card>
 

@@ -132,7 +132,7 @@ export interface Routine {
 export type WorkoutAction =
   | { type: 'START_WORKOUT'; payload: { userId: string; routineId?: string; routineName?: string } }
   | { type: 'RESUME_WORKOUT'; payload: Workout }
-  | { type: 'ADD_EXERCISE'; payload: { exercise: Exercise } }
+  | { type: 'ADD_EXERCISE'; payload: { exercise: Exercise; previousSets?: WorkoutSet[]; previousDuration?: number; previousDistance?: number } }
   | { type: 'REMOVE_EXERCISE'; payload: { entryId: string } }
   | { type: 'ADD_SET'; payload: { entryId: string } }
   | { type: 'REMOVE_SET'; payload: { entryId: string; setNumber: number } }

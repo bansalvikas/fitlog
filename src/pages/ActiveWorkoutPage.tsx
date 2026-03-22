@@ -9,6 +9,7 @@ import { WorkoutSummaryModal } from '../components/workout/WorkoutSummaryModal'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { useWorkoutHistory } from '../hooks/useWorkoutHistory'
+import { useOverloadSuggestions } from '../hooks/useOverloadSuggestion'
 import { useAuth } from '../hooks/useAuth'
 import type { Exercise, Workout } from '../types'
 import { Dumbbell } from 'lucide-react'
@@ -16,8 +17,9 @@ import { Dumbbell } from 'lucide-react'
 export function ActiveWorkoutPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { saveWorkout } = useWorkoutHistory()
+  const { workouts, saveWorkout, getLastExerciseData } = useWorkoutHistory()
   const { workout, dispatch } = useWorkout()
+  const overloadSuggestions = useOverloadSuggestions(workout?.entries ?? [], workouts)
   const [showPicker, setShowPicker] = useState(false)
   const [showSummary, setShowSummary] = useState(false)
   const [finishedWorkout, setFinishedWorkout] = useState<Workout | null>(null)
@@ -31,9 +33,19 @@ export function ActiveWorkoutPage() {
 
   const handleAddExercise = useCallback(
     (exercise: Exercise) => {
-      dispatch({ type: 'ADD_EXERCISE', payload: { exercise } })
+      // Smart Recall: look up last workout data for this exercise
+      const lastData = getLastExerciseData(exercise.id)
+      dispatch({
+        type: 'ADD_EXERCISE',
+        payload: {
+          exercise,
+          previousSets: lastData?.sets,
+          previousDuration: lastData?.duration,
+          previousDistance: lastData?.distance,
+        },
+      })
     },
-    [dispatch]
+    [dispatch, getLastExerciseData]
   )
 
   const handleRemoveExercise = useCallback(
@@ -166,6 +178,7 @@ export function ActiveWorkoutPage() {
               <ExerciseCard
                 key={entry.id}
                 entry={entry}
+                overloadSuggestion={overloadSuggestions.get(entry.exerciseId)}
                 onAddSet={handleAddSet}
                 onRemoveExercise={handleRemoveExercise}
                 onUpdateSet={handleUpdateSet}

@@ -58,10 +58,21 @@ function workoutReducer(state: Workout | null, action: WorkoutAction): Workout |
 
     case 'ADD_EXERCISE': {
       if (!state) return state
-      const newEntry = createEntryFromExercise(
-        action.payload.exercise,
-        state.entries.length
-      )
+      const { exercise, previousSets, previousDuration, previousDistance } = action.payload
+      const newEntry = createEntryFromExercise(exercise, state.entries.length)
+
+      // Smart Recall: pre-populate from last workout if available
+      if (previousSets && previousSets.length > 0) {
+        newEntry.sets = previousSets.map((s, i) => ({
+          setNumber: i + 1,
+          weight: s.weight,
+          reps: s.reps,
+          completed: false,
+        }))
+      }
+      if (previousDuration !== undefined) newEntry.duration = previousDuration
+      if (previousDistance !== undefined) newEntry.distance = previousDistance
+
       return {
         ...state,
         entries: [...state.entries, newEntry],
