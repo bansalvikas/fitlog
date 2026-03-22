@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { useAuth } from '../../hooks/useAuth'
+import { LoginPage } from '../../pages/LoginPage'
 
 export function AuthGuard({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth()
@@ -16,13 +17,7 @@ export function AuthGuard({ children }: { children: ReactNode }) {
   }
 
   if (!user) {
-    // For now (mock auth), this shouldn't happen.
-    // When real auth is added, redirect to /login here.
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-950 text-white">
-        <p>Please sign in to continue.</p>
-      </div>
-    )
+    return <LoginPage />
   }
 
   return <>{children}</>

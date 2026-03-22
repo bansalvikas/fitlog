@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Moon, Sun, Monitor, ChevronRight } from 'lucide-react'
+import { Moon, Sun, Monitor, ChevronRight, LogOut } from 'lucide-react'
 import { Header } from '../components/layout/Header'
 import { Card } from '../components/ui/Card'
 import { useAuth } from '../hooks/useAuth'
@@ -24,7 +24,7 @@ const themeOptions: { value: ThemeMode; label: string; icon: typeof Sun }[] = [
 ]
 
 export function SettingsPage() {
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const navigate = useNavigate()
   const [theme, setThemeState] = useState<ThemeMode>(getTheme)
 
@@ -39,9 +39,32 @@ export function SettingsPage() {
       <div className="px-4 py-4 flex flex-col gap-4">
         {/* Account */}
         <Card>
-          <h3 className="text-sm font-medium text-slate-400 mb-2">Account</h3>
-          <p className="text-white font-medium">{user?.displayName}</p>
-          <p className="text-sm text-slate-400">{user?.email}</p>
+          <h3 className="text-sm font-medium text-slate-400 mb-3">Account</h3>
+          <div className="flex items-center gap-3">
+            {user?.photoURL ? (
+              <img
+                src={user.photoURL}
+                alt=""
+                className="w-10 h-10 rounded-full"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
+                {user?.displayName?.charAt(0) ?? '?'}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-white font-medium truncate">{user?.displayName}</p>
+              <p className="text-sm text-slate-400 truncate">{user?.email}</p>
+            </div>
+          </div>
+          <button
+            onClick={signOut}
+            className="flex items-center gap-2 mt-3 px-3 py-2 rounded-lg text-red-400 text-sm hover:bg-slate-800 active:scale-[0.97] transition-all w-full"
+          >
+            <LogOut size={16} />
+            Sign Out
+          </button>
         </Card>
 
         {/* Theme */}

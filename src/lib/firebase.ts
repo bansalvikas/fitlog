@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app'
-import { getAuth } from 'firebase/auth'
+import { getAuth, GoogleAuthProvider } from 'firebase/auth'
 import {
   initializeFirestore,
   persistentLocalCache,
@@ -15,19 +15,14 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 }
 
-// Only initialize Firebase if config is present (allows dev mode without Firebase)
-const hasFirebaseConfig = !!firebaseConfig.apiKey
+export const app = initializeApp(firebaseConfig)
 
-export const app = hasFirebaseConfig ? initializeApp(firebaseConfig) : null
+export const auth = getAuth(app)
 
-export const auth = app ? getAuth(app) : null
+export const googleProvider = new GoogleAuthProvider()
 
-export const db = app
-  ? initializeFirestore(app, {
-      localCache: persistentLocalCache({
-        tabManager: persistentMultipleTabManager(),
-      }),
-    })
-  : null
-
-export { hasFirebaseConfig }
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager(),
+  }),
+})

@@ -1,41 +1,52 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import type { Workout, WorkoutSummary } from '../types'
 import { calculateVolume } from '../lib/utils'
-
-const STORAGE_KEY = 'fitlog-workouts'
-
-function loadWorkouts(): Workout[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
-}
-
-function persistWorkouts(workouts: Workout[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(workouts))
-}
+import { useAuth } from './useAuth'
+import {
+  saveWorkoutToFirestore,
+  deleteWorkoutFromFirestore,
+  subscribeToWorkouts,
+} from '../lib/firestore'
 
 export function useWorkoutHistory() {
-  const [workouts, setWorkouts] = useState<Workout[]>(loadWorkouts)
+  const { user } = useAuth()
+  const [workouts, setWorkouts] = useState<Workout[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Subscribe to Firestore workouts for current user
+  useEffect(() => {
+    if (!user) {
+      setWorkouts([])
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
+    const unsubscribe = subscribeToWorkouts(user.uid, (data) => {
+      setWorkouts(data)
+      setLoading(false)
+    })
+
+    return () => unsubscribe()
+  }, [user])
 
   const saveWorkout = useCallback(
-    (workout: Workout) => {
-      const updated = [workout, ...workouts.filter((w) => w.id !== workout.id)]
-      setWorkouts(updated)
-      persistWorkouts(updated)
+    async (workout: Workout) => {
+      if (!user) return
+      // Optimistic update
+      setWorkouts((prev) => [workout, ...prev.filter((w) => w.id !== workout.id)])
+      await saveWorkoutToFirestore(user.uid, workout)
     },
-    [workouts]
+    [user]
   )
 
   const deleteWorkout = useCallback(
-    (id: string) => {
-      const updated = workouts.filter((w) => w.id !== id)
-      setWorkouts(updated)
-      persistWorkouts(updated)
+    async (id: string) => {
+      if (!user) return
+      setWorkouts((prev) => prev.filter((w) => w.id !== id))
+      await deleteWorkoutFromFirestore(user.uid, id)
     },
-    [workouts]
+    [user]
   )
 
   const getWorkoutById = useCallback(
@@ -68,7 +79,7 @@ export function useWorkoutHistory() {
   const weekWorkoutCount = useMemo(() => {
     const now = new Date()
     const weekStart = new Date(now)
-    weekStart.setDate(now.getDate() - now.getDay()) // Start of week (Sunday)
+    weekStart.setDate(now.getDate() - now.getDay())
     weekStart.setHours(0, 0, 0, 0)
 
     return workouts.filter((w) => {
@@ -81,6 +92,7 @@ export function useWorkoutHistory() {
     workouts,
     summaries,
     weekWorkoutCount,
+    loading,
     saveWorkout,
     deleteWorkout,
     getWorkoutById,

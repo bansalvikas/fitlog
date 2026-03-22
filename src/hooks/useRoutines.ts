@@ -1,66 +1,85 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import type { Routine, RoutineExercise, DayOfWeek } from '../types'
 import { generateId, getDayOfWeek } from '../lib/utils'
-
-// In-memory storage for development. Will be replaced with Firestore.
-const STORAGE_KEY = 'fitlog-routines'
-
-function loadRoutines(): Routine[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
-}
-
-function saveRoutines(routines: Routine[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(routines))
-}
+import { useAuth } from './useAuth'
+import {
+  saveRoutineToFirestore,
+  deleteRoutineFromFirestore,
+  subscribeToRoutines,
+} from '../lib/firestore'
 
 export function useRoutines() {
-  const [routines, setRoutines] = useState<Routine[]>(loadRoutines)
+  const { user } = useAuth()
+  const [routines, setRoutines] = useState<Routine[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Subscribe to Firestore routines for current user
+  useEffect(() => {
+    if (!user) {
+      setRoutines([])
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
+    const unsubscribe = subscribeToRoutines(user.uid, (data) => {
+      setRoutines(data)
+      setLoading(false)
+    })
+
+    return () => unsubscribe()
+  }, [user])
 
   const createRoutine = useCallback(
-    (name: string, daysOfWeek: DayOfWeek[], exercises: RoutineExercise[]) => {
+    async (name: string, daysOfWeek: DayOfWeek[], exercises: RoutineExercise[]) => {
+      if (!user) return null
       const now = new Date().toISOString()
       const routine: Routine = {
         id: generateId(),
-        userId: 'dev-user',
+        userId: user.uid,
         name,
         daysOfWeek,
         exercises,
         createdAt: now,
         updatedAt: now,
       }
-      const updated = [...routines, routine]
-      setRoutines(updated)
-      saveRoutines(updated)
+      // Optimistic update
+      setRoutines((prev) => [routine, ...prev])
+      await saveRoutineToFirestore(user.uid, routine)
       return routine
     },
-    [routines]
+    [user]
   )
 
   const updateRoutine = useCallback(
-    (id: string, updates: Partial<Pick<Routine, 'name' | 'daysOfWeek' | 'exercises'>>) => {
-      const updated = routines.map((r) =>
-        r.id === id
-          ? { ...r, ...updates, updatedAt: new Date().toISOString() }
-          : r
+    async (id: string, updates: Partial<Pick<Routine, 'name' | 'daysOfWeek' | 'exercises'>>) => {
+      if (!user) return
+      setRoutines((prev) =>
+        prev.map((r) =>
+          r.id === id
+            ? { ...r, ...updates, updatedAt: new Date().toISOString() }
+            : r
+        )
       )
-      setRoutines(updated)
-      saveRoutines(updated)
+      const existing = routines.find((r) => r.id === id)
+      if (existing) {
+        await saveRoutineToFirestore(user.uid, {
+          ...existing,
+          ...updates,
+          updatedAt: new Date().toISOString(),
+        })
+      }
     },
-    [routines]
+    [user, routines]
   )
 
   const deleteRoutine = useCallback(
-    (id: string) => {
-      const updated = routines.filter((r) => r.id !== id)
-      setRoutines(updated)
-      saveRoutines(updated)
+    async (id: string) => {
+      if (!user) return
+      setRoutines((prev) => prev.filter((r) => r.id !== id))
+      await deleteRoutineFromFirestore(user.uid, id)
     },
-    [routines]
+    [user]
   )
 
   const todayRoutine = useMemo(() => {
@@ -76,6 +95,7 @@ export function useRoutines() {
   return {
     routines,
     todayRoutine,
+    loading,
     createRoutine,
     updateRoutine,
     deleteRoutine,

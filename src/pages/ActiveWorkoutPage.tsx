@@ -9,11 +9,13 @@ import { WorkoutSummaryModal } from '../components/workout/WorkoutSummaryModal'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { useWorkoutHistory } from '../hooks/useWorkoutHistory'
+import { useAuth } from '../hooks/useAuth'
 import type { Exercise, Workout } from '../types'
 import { Dumbbell } from 'lucide-react'
 
 export function ActiveWorkoutPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { saveWorkout } = useWorkoutHistory()
   const { workout, dispatch } = useWorkout()
   const [showPicker, setShowPicker] = useState(false)
@@ -22,8 +24,8 @@ export function ActiveWorkoutPage() {
 
   // Auto-start workout if none active
   useEffect(() => {
-    if (!workout) {
-      dispatch({ type: 'START_WORKOUT', payload: {} })
+    if (!workout && user) {
+      dispatch({ type: 'START_WORKOUT', payload: { userId: user.uid } })
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 

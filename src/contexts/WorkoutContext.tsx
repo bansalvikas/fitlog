@@ -41,7 +41,7 @@ function workoutReducer(state: Workout | null, action: WorkoutAction): Workout |
     case 'START_WORKOUT': {
       return {
         id: generateId(),
-        userId: 'dev-user',
+        userId: action.payload.userId,
         date: getTodayDate(),
         startTime: now,
         routineId: action.payload.routineId,

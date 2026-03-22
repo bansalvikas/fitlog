@@ -130,7 +130,7 @@ export interface Routine {
 // ── Active Workout Reducer ──────────────────────────────────────────
 
 export type WorkoutAction =
-  | { type: 'START_WORKOUT'; payload: { routineId?: string; routineName?: string } }
+  | { type: 'START_WORKOUT'; payload: { userId: string; routineId?: string; routineName?: string } }
   | { type: 'RESUME_WORKOUT'; payload: Workout }
   | { type: 'ADD_EXERCISE'; payload: { exercise: Exercise } }
   | { type: 'REMOVE_EXERCISE'; payload: { entryId: string } }
