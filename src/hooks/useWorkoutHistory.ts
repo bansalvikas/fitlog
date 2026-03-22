@@ -13,22 +13,27 @@ export function useWorkoutHistory() {
   const [workouts, setWorkouts] = useState<Workout[]>([])
   const [loading, setLoading] = useState(true)
 
+  // Track the user's uid to derive loading state without synchronous setState
+  const userId = user?.uid ?? null
+
   // Subscribe to Firestore workouts for current user
   useEffect(() => {
-    if (!user) {
-      setWorkouts([])
-      setLoading(false)
-      return
-    }
+    if (!userId) return
 
-    setLoading(true)
-    const unsubscribe = subscribeToWorkouts(user.uid, (data) => {
-      setWorkouts(data)
-      setLoading(false)
+    let active = true
+    const unsubscribe = subscribeToWorkouts(userId, (data) => {
+      if (active) {
+        setWorkouts(data)
+        setLoading(false)
+      }
     })
 
-    return () => unsubscribe()
-  }, [user])
+    return () => {
+      active = false
+      unsubscribe()
+      setWorkouts([])
+    }
+  }, [userId])
 
   const saveWorkout = useCallback(
     async (workout: Workout) => {

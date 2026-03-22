@@ -5,9 +5,10 @@ export function generateId(): string {
 
 /** Format seconds as HH:MM:SS or MM:SS */
 export function formatDuration(totalSeconds: number): string {
-  const hours = Math.floor(totalSeconds / 3600)
-  const minutes = Math.floor((totalSeconds % 3600) / 60)
-  const seconds = totalSeconds % 60
+  const clamped = Math.max(0, Math.floor(totalSeconds))
+  const hours = Math.floor(clamped / 3600)
+  const minutes = Math.floor((clamped % 3600) / 60)
+  const seconds = clamped % 60
 
   const pad = (n: number) => n.toString().padStart(2, '0')
 
@@ -20,6 +21,8 @@ export function formatDuration(totalSeconds: number): string {
 /** Format ISO date string to readable date */
 export function formatDate(isoDate: string): string {
   const date = new Date(isoDate)
+  if (isNaN(date.getTime())) return isoDate // fallback for invalid dates
+
   const now = new Date()
   const diffMs = now.getTime() - date.getTime()
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))

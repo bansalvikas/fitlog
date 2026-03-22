@@ -13,22 +13,26 @@ export function useRoutines() {
   const [routines, setRoutines] = useState<Routine[]>([])
   const [loading, setLoading] = useState(true)
 
+  const userId = user?.uid ?? null
+
   // Subscribe to Firestore routines for current user
   useEffect(() => {
-    if (!user) {
-      setRoutines([])
-      setLoading(false)
-      return
-    }
+    if (!userId) return
 
-    setLoading(true)
-    const unsubscribe = subscribeToRoutines(user.uid, (data) => {
-      setRoutines(data)
-      setLoading(false)
+    let active = true
+    const unsubscribe = subscribeToRoutines(userId, (data) => {
+      if (active) {
+        setRoutines(data)
+        setLoading(false)
+      }
     })
 
-    return () => unsubscribe()
-  }, [user])
+    return () => {
+      active = false
+      unsubscribe()
+      setRoutines([])
+    }
+  }, [userId])
 
   const createRoutine = useCallback(
     async (name: string, daysOfWeek: DayOfWeek[], exercises: RoutineExercise[]) => {
@@ -54,23 +58,21 @@ export function useRoutines() {
   const updateRoutine = useCallback(
     async (id: string, updates: Partial<Pick<Routine, 'name' | 'daysOfWeek' | 'exercises'>>) => {
       if (!user) return
-      setRoutines((prev) =>
-        prev.map((r) =>
-          r.id === id
-            ? { ...r, ...updates, updatedAt: new Date().toISOString() }
-            : r
-        )
-      )
-      const existing = routines.find((r) => r.id === id)
-      if (existing) {
-        await saveRoutineToFirestore(user.uid, {
-          ...existing,
-          ...updates,
-          updatedAt: new Date().toISOString(),
+      // Use functional setState to get the latest routines and avoid stale closure
+      let routineToSave: Routine | null = null
+      setRoutines((prev) => {
+        return prev.map((r) => {
+          if (r.id !== id) return r
+          const updated = { ...r, ...updates, updatedAt: new Date().toISOString() }
+          routineToSave = updated
+          return updated
         })
+      })
+      if (routineToSave) {
+        await saveRoutineToFirestore(user.uid, routineToSave)
       }
     },
-    [user, routines]
+    [user]
   )
 
   const deleteRoutine = useCallback(

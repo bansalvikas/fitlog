@@ -8,6 +8,7 @@ import {
   orderBy,
   limit,
   onSnapshot,
+  writeBatch,
   type Unsubscribe,
 } from 'firebase/firestore'
 import { db } from './firebase'
@@ -15,17 +16,21 @@ import type { Workout, WorkoutEntry, Routine } from '../types'
 
 // ── Workouts ────────────────────────────────────────────────────────
 
-/** Save a completed workout to Firestore */
+/** Save a completed workout to Firestore (atomic batch write) */
 export async function saveWorkoutToFirestore(userId: string, workout: Workout): Promise<void> {
+  const batch = writeBatch(db)
+
   const workoutRef = doc(db, 'users', userId, 'workouts', workout.id)
   const { entries, ...workoutData } = workout
-  await setDoc(workoutRef, workoutData)
+  batch.set(workoutRef, workoutData)
 
-  // Save entries as subcollection
+  // Save entries as subcollection in the same batch
   for (const entry of entries) {
     const entryRef = doc(db, 'users', userId, 'workouts', workout.id, 'entries', entry.id)
-    await setDoc(entryRef, entry)
+    batch.set(entryRef, entry)
   }
+
+  await batch.commit()
 }
 
 /** Load all workouts for a user (most recent first) */
@@ -60,33 +65,47 @@ export function subscribeToWorkouts(
   const workoutsRef = collection(db, 'users', userId, 'workouts')
   const q = query(workoutsRef, orderBy('date', 'desc'), limit(100))
 
-  return onSnapshot(q, async (snapshot) => {
-    const workouts: Workout[] = []
-    for (const docSnap of snapshot.docs) {
-      const data = docSnap.data()
-      const entriesRef = collection(db, 'users', userId, 'workouts', docSnap.id, 'entries')
-      const entriesSnap = await getDocs(query(entriesRef, orderBy('order')))
-      const entries: WorkoutEntry[] = entriesSnap.docs.map((e) => e.data() as WorkoutEntry)
+  return onSnapshot(
+    q,
+    async (snapshot) => {
+      const workouts: Workout[] = []
+      // Load entries for each workout (parallelized for performance)
+      const promises = snapshot.docs.map(async (docSnap) => {
+        const data = docSnap.data()
+        const entriesRef = collection(db, 'users', userId, 'workouts', docSnap.id, 'entries')
+        const entriesSnap = await getDocs(query(entriesRef, orderBy('order')))
+        const entries: WorkoutEntry[] = entriesSnap.docs.map((e) => e.data() as WorkoutEntry)
 
-      workouts.push({
-        ...data,
-        id: docSnap.id,
-        entries,
-      } as Workout)
+        return {
+          ...data,
+          id: docSnap.id,
+          entries,
+        } as Workout
+      })
+
+      const results = await Promise.all(promises)
+      workouts.push(...results)
+      callback(workouts)
+    },
+    (error) => {
+      console.error('[Firestore] Workout subscription error:', error)
     }
-    callback(workouts)
-  })
+  )
 }
 
-/** Delete a workout */
+/** Delete a workout (atomic batch delete) */
 export async function deleteWorkoutFromFirestore(userId: string, workoutId: string): Promise<void> {
+  const batch = writeBatch(db)
+
   // Delete entries first
   const entriesRef = collection(db, 'users', userId, 'workouts', workoutId, 'entries')
   const entriesSnap = await getDocs(entriesRef)
   for (const entryDoc of entriesSnap.docs) {
-    await deleteDoc(entryDoc.ref)
+    batch.delete(entryDoc.ref)
   }
-  await deleteDoc(doc(db, 'users', userId, 'workouts', workoutId))
+  batch.delete(doc(db, 'users', userId, 'workouts', workoutId))
+
+  await batch.commit()
 }
 
 // ── Routines ────────────────────────────────────────────────────────
@@ -113,10 +132,16 @@ export function subscribeToRoutines(
   const routinesRef = collection(db, 'users', userId, 'routines')
   const q = query(routinesRef, orderBy('createdAt', 'desc'))
 
-  return onSnapshot(q, (snapshot) => {
-    const routines = snapshot.docs.map((d) => ({ ...d.data(), id: d.id }) as Routine)
-    callback(routines)
-  })
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const routines = snapshot.docs.map((d) => ({ ...d.data(), id: d.id }) as Routine)
+      callback(routines)
+    },
+    (error) => {
+      console.error('[Firestore] Routine subscription error:', error)
+    }
+  )
 }
 
 /** Delete a routine */
