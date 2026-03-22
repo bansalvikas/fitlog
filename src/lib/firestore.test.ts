@@ -106,8 +106,8 @@ describe('Firestore CRUD structure', () => {
     expect(code).toContain('writeBatch(db)')
     // Destructuring should separate entries
     expect(code).toContain('const { entries, ...workoutData } = workout')
-    // Should use batch.set
-    expect(code).toContain('batch.set(workoutRef, workoutData)')
+    // Should use batch.set with stripUndefined to clean data
+    expect(code).toContain('batch.set(workoutRef, stripUndefined(workoutData))')
     // Should iterate and save entries separately
     expect(code).toContain('for (const entry of entries)')
     // Should commit batch

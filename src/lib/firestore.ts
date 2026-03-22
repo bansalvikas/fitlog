@@ -14,6 +14,13 @@ import {
 import { db } from './firebase'
 import type { Workout, WorkoutEntry, Routine } from '../types'
 
+/** Strip undefined values from an object (Firestore rejects undefined) */
+function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, v]) => v !== undefined)
+  ) as T
+}
+
 // ── Workouts ────────────────────────────────────────────────────────
 
 /** Save a completed workout to Firestore (atomic batch write) */
@@ -22,12 +29,12 @@ export async function saveWorkoutToFirestore(userId: string, workout: Workout): 
 
   const workoutRef = doc(db, 'users', userId, 'workouts', workout.id)
   const { entries, ...workoutData } = workout
-  batch.set(workoutRef, workoutData)
+  batch.set(workoutRef, stripUndefined(workoutData))
 
   // Save entries as subcollection in the same batch
   for (const entry of entries) {
     const entryRef = doc(db, 'users', userId, 'workouts', workout.id, 'entries', entry.id)
-    batch.set(entryRef, entry)
+    batch.set(entryRef, stripUndefined(entry as unknown as Record<string, unknown>))
   }
 
   await batch.commit()
