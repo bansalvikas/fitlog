@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useNavigate, useLocation, useBlocker } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft, Plus, Loader2 } from 'lucide-react'
 import { useWorkout } from '../contexts/WorkoutContext'
 import { ExercisePicker } from '../components/exercise/ExercisePicker'
@@ -71,20 +71,6 @@ export function ActiveWorkoutPage() {
 
   // Bug 3: Block browser back / in-app navigation when workout has data
   const hasUnsavedWork = workout !== null && workout.status === 'in_progress' && workout.entries.length > 0
-
-  // Block in-app router navigation
-  const blocker = useBlocker(hasUnsavedWork && !showSummary)
-
-  useEffect(() => {
-    if (blocker.state === 'blocked') {
-      if (confirm('Discard this workout? All logged data will be lost.')) {
-        dispatch({ type: 'DISCARD_WORKOUT' })
-        blocker.proceed()
-      } else {
-        blocker.reset()
-      }
-    }
-  }, [blocker, dispatch])
 
   // Block browser back / tab close
   useEffect(() => {
