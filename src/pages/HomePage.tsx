@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Dumbbell, Plus, Play, Calendar, Trophy } from 'lucide-react'
+import { Dumbbell, Plus, Play, Calendar, Trophy, Pencil } from 'lucide-react'
 import { Header } from '../components/layout/Header'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
@@ -61,7 +61,7 @@ export function HomePage() {
             </p>
             <Button
               fullWidth
-              onClick={() => navigate('/workout')}
+              onClick={() => navigate('/workout', { state: { routineId: todayRoutine.id } })}
               className="gap-2"
             >
               <Play size={16} />
@@ -102,16 +102,12 @@ export function HomePage() {
           {routines.length > 0 ? (
             <div className="flex flex-col gap-2">
               {routines.map((routine) => (
-                <Card
-                  key={routine.id}
-                  className="cursor-pointer active:scale-[0.98] transition-transform"
-                  onClick={() => navigate(`/routines/${routine.id}/edit`)}
-                >
+                <Card key={routine.id}>
                   <div className="flex items-center justify-between">
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-white">{routine.name}</p>
                       <p className="text-xs text-slate-500">
-                        {routine.exercises.length} exercises
+                        {routine.exercises.length} exercise{routine.exercises.length !== 1 ? 's' : ''}
                         {routine.daysOfWeek.length > 0 && (
                           <>
                             {' · '}
@@ -122,7 +118,25 @@ export function HomePage() {
                         )}
                       </p>
                     </div>
-                    <Dumbbell size={16} className="text-slate-600" />
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => navigate(`/routines/${routine.id}/edit`)}
+                        className="p-2 text-slate-500 hover:text-white active:scale-95 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                        title="Edit"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      {!isActive && (
+                        <Button
+                          size="sm"
+                          onClick={() => navigate('/workout', { state: { routineId: routine.id } })}
+                          className="gap-1"
+                        >
+                          <Play size={12} />
+                          Start
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </Card>
               ))}

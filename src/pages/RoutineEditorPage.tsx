@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Plus, Trash2, GripVertical } from 'lucide-react'
 import { Button } from '../components/ui/Button'
@@ -7,6 +7,7 @@ import { Card } from '../components/ui/Card'
 import { ExercisePicker } from '../components/exercise/ExercisePicker'
 import { useRoutines } from '../hooks/useRoutines'
 import { showToast } from '../components/ui/Toast'
+import { LOG_MODE_LABELS } from '../lib/utils'
 import type { Exercise, RoutineExercise, DayOfWeek } from '../types'
 
 const DAYS = [
@@ -22,7 +23,7 @@ const DAYS = [
 export function RoutineEditorPage() {
   const navigate = useNavigate()
   const { id } = useParams()
-  const { getRoutineById, createRoutine, updateRoutine } = useRoutines()
+  const { getRoutineById, createRoutine, updateRoutine, loading } = useRoutines()
 
   const existing = id ? getRoutineById(id) : null
 
@@ -30,6 +31,15 @@ export function RoutineEditorPage() {
   const [daysOfWeek, setDaysOfWeek] = useState<DayOfWeek[]>(existing?.daysOfWeek ?? [])
   const [exercises, setExercises] = useState<RoutineExercise[]>(existing?.exercises ?? [])
   const [showPicker, setShowPicker] = useState(false)
+
+  // Bug 2: Sync form state when existing routine loads from Firestore
+  useEffect(() => {
+    if (existing) {
+      setName(existing.name)
+      setDaysOfWeek(existing.daysOfWeek)
+      setExercises(existing.exercises)
+    }
+  }, [existing])
 
   const toggleDay = (day: DayOfWeek) => {
     setDaysOfWeek((prev) =>
@@ -70,6 +80,15 @@ export function RoutineEditorPage() {
       showToast('Routine created')
     }
     navigate('/')
+  }
+
+  // Show loading spinner while waiting for routine data to load
+  if (id && !existing && loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
   }
 
   return (
@@ -139,7 +158,7 @@ export function RoutineEditorPage() {
                       {exercise.exerciseName}
                     </p>
                     <p className="text-[10px] text-slate-500">
-                      {exercise.defaultSets} sets · {exercise.logMode.replace(/_/g, ' ')}
+                      {exercise.defaultSets} sets · {LOG_MODE_LABELS[exercise.logMode] ?? exercise.logMode}
                     </p>
                   </div>
                   <button

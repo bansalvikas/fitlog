@@ -431,7 +431,7 @@
       "equipment": "dumbbell",
       "movementPattern": "horizontal_pull",
       "defaultLogMode": "sets_reps_weight",
-      "aliases": ["Incline Bench Row"],
+      "aliases": ["Seal Row", "Prone Row"],
       "isCommon": true
     },
     {

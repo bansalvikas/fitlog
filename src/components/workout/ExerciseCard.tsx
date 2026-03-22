@@ -9,6 +9,7 @@ interface ExerciseCardProps {
   entry: WorkoutEntry
   overloadSuggestion?: OverloadSuggestion | null
   onAddSet: (entryId: string) => void
+  onRemoveSet?: (entryId: string, setNumber: number) => void
   onRemoveExercise: (entryId: string) => void
   onUpdateSet: (entryId: string, setNumber: number, field: 'weight' | 'reps', value: number) => void
   onCompleteSet: (entryId: string, setNumber: number) => void
@@ -19,6 +20,7 @@ export function ExerciseCard({
   entry,
   overloadSuggestion,
   onAddSet,
+  onRemoveSet,
   onRemoveExercise,
   onUpdateSet,
   onCompleteSet,
@@ -47,7 +49,13 @@ export function ExerciseCard({
           </p>
         </div>
         <button
-          onClick={() => onRemoveExercise(entry.id)}
+          onClick={() => {
+            const hasData = entry.sets.some((s) => s.weight > 0 || s.reps > 0 || s.completed)
+              || (entry.duration != null && entry.duration > 0)
+              || (entry.distance != null && entry.distance > 0)
+            if (hasData && !confirm(`Remove ${entry.exerciseName}? Logged data will be lost.`)) return
+            onRemoveExercise(entry.id)
+          }}
           className="p-2 -mr-2 text-slate-600 hover:text-red-400 active:scale-95 min-w-[44px] min-h-[44px] flex items-center justify-center"
         >
           <Trash2 size={16} />
@@ -72,8 +80,10 @@ export function ExerciseCard({
                 key={set.setNumber}
                 set={set}
                 entryId={entry.id}
+                totalSets={entry.sets.length}
                 onUpdate={onUpdateSet}
                 onComplete={onCompleteSet}
+                onRemoveSet={onRemoveSet}
               />
             ))}
           </div>

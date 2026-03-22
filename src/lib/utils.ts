@@ -61,3 +61,11 @@ export function getTodayDate(): string {
 export function getDayOfWeek(): number {
   return new Date().getDay()
 }
+
+/** Human-readable labels for exercise log modes */
+export const LOG_MODE_LABELS: Record<string, string> = {
+  sets_reps_weight: 'Weight & Reps',
+  duration_only: 'Duration',
+  duration_distance: 'Duration & Distance',
+  distance_duration_load: 'Distance, Duration & Load',
+}
