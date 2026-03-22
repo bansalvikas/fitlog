@@ -1,8 +1,7 @@
 import { createContext, useState, useEffect, type ReactNode } from 'react'
 import {
   onAuthStateChanged,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   signOut as firebaseSignOut,
 } from 'firebase/auth'
 import { doc, setDoc, getDoc } from 'firebase/firestore'
@@ -31,13 +30,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authError, setAuthError] = useState<string | null>(null)
 
   useEffect(() => {
-    // Check for redirect result first
-    getRedirectResult(auth)
-      .catch((error) => {
-        console.error('Redirect result error:', error)
-        setAuthError(`Auth error: ${error.code} — ${error.message}`)
-      })
-
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const appUser: AppUser = {
@@ -84,12 +76,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = async () => {
     setAuthError(null)
     try {
-      await signInWithRedirect(auth, googleProvider)
+      await signInWithPopup(auth, googleProvider)
     } catch (error: unknown) {
       const err = error as { code?: string; message?: string }
+      if (err.code === 'auth/popup-closed-by-user') return
+      if (err.code === 'auth/cancelled-popup-request') return
       console.error('Google sign-in error:', err)
       setAuthError(`${err.code}: ${err.message}`)
-      throw error
     }
   }
 
