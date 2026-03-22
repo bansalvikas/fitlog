@@ -132,13 +132,6 @@ export function ActiveWorkoutPage() {
     [dispatch]
   )
 
-  const handleCompleteSet = useCallback(
-    (entryId: string, setNumber: number) => {
-      dispatch({ type: 'COMPLETE_SET', payload: { entryId, setNumber } })
-    },
-    [dispatch]
-  )
-
   const handleUpdateCardio = useCallback(
     (entryId: string, field: 'duration' | 'distance', value: number) => {
       dispatch({
@@ -196,8 +189,8 @@ export function ActiveWorkoutPage() {
   if (!workout) return null
 
   const hasEntries = workout.entries.length > 0
-  const completedSets = workout.entries.reduce(
-    (sum, e) => sum + e.sets.filter((s) => s.completed).length,
+  const loggedSets = workout.entries.reduce(
+    (sum, e) => sum + e.sets.filter((s) => s.weight > 0 || s.reps > 0).length,
     0
   )
 
@@ -241,7 +234,7 @@ export function ActiveWorkoutPage() {
             {/* Stats bar */}
             <div className="flex items-center justify-between text-xs text-slate-500 px-1">
               <span>{workout.entries.length} exercise{workout.entries.length !== 1 ? 's' : ''}</span>
-              <span>{completedSets} set{completedSets !== 1 ? 's' : ''} completed</span>
+              <span>{loggedSets} set{loggedSets !== 1 ? 's' : ''} logged</span>
             </div>
 
             {/* Exercise cards */}
@@ -254,7 +247,6 @@ export function ActiveWorkoutPage() {
                 onRemoveSet={handleRemoveSet}
                 onRemoveExercise={handleRemoveExercise}
                 onUpdateSet={handleUpdateSet}
-                onCompleteSet={handleCompleteSet}
                 onUpdateCardio={handleUpdateCardio}
               />
             ))}

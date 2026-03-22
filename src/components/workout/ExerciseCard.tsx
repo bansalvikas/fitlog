@@ -9,10 +9,9 @@ interface ExerciseCardProps {
   entry: WorkoutEntry
   overloadSuggestion?: OverloadSuggestion | null
   onAddSet: (entryId: string) => void
-  onRemoveSet?: (entryId: string, setNumber: number) => void
+  onRemoveSet: (entryId: string, setNumber: number) => void
   onRemoveExercise: (entryId: string) => void
   onUpdateSet: (entryId: string, setNumber: number, field: 'weight' | 'reps', value: number) => void
-  onCompleteSet: (entryId: string, setNumber: number) => void
   onUpdateCardio: (entryId: string, field: 'duration' | 'distance', value: number) => void
 }
 
@@ -23,7 +22,6 @@ export function ExerciseCard({
   onRemoveSet,
   onRemoveExercise,
   onUpdateSet,
-  onCompleteSet,
   onUpdateCardio,
 }: ExerciseCardProps) {
   const isStrength = entry.logMode === 'sets_reps_weight'
@@ -50,7 +48,7 @@ export function ExerciseCard({
         </div>
         <button
           onClick={() => {
-            const hasData = entry.sets.some((s) => s.weight > 0 || s.reps > 0 || s.completed)
+            const hasData = entry.sets.some((s) => s.weight > 0 || s.reps > 0)
               || (entry.duration != null && entry.duration > 0)
               || (entry.distance != null && entry.distance > 0)
             if (hasData && !confirm(`Remove ${entry.exerciseName}? Logged data will be lost.`)) return
@@ -67,10 +65,9 @@ export function ExerciseCard({
         <>
           {/* Column headers */}
           <div className="flex items-center gap-2 mb-1">
-            <span className="w-6 text-center text-[9px] font-medium text-slate-600">SET</span>
+            <span className="w-6 shrink-0" />
             <span className="flex-1 text-center text-[9px] font-medium text-slate-600">KG</span>
             <span className="flex-1 text-center text-[9px] font-medium text-slate-600">REPS</span>
-            <span className="w-9 text-center text-[9px] font-medium text-slate-600"></span>
           </div>
 
           {/* Set rows */}
@@ -80,9 +77,7 @@ export function ExerciseCard({
                 key={set.setNumber}
                 set={set}
                 entryId={entry.id}
-                totalSets={entry.sets.length}
                 onUpdate={onUpdateSet}
-                onComplete={onCompleteSet}
                 onRemoveSet={onRemoveSet}
               />
             ))}

@@ -102,26 +102,26 @@ describe('calculateVolume', () => {
     expect(calculateVolume([])).toBe(0)
   })
 
-  it('calculates volume for completed sets only', () => {
+  it('calculates volume for sets with both weight and reps entered', () => {
     const entries = [
       {
         sets: [
-          { weight: 60, reps: 10, completed: true },
-          { weight: 60, reps: 8, completed: true },
-          { weight: 60, reps: 6, completed: false },
+          { weight: 60, reps: 10 },
+          { weight: 60, reps: 8 },
+          { weight: 60, reps: 6 },
         ],
       },
     ]
-    // 60*10 + 60*8 = 600 + 480 = 1080
-    expect(calculateVolume(entries)).toBe(1080)
+    // 60*10 + 60*8 + 60*6 = 600 + 480 + 360 = 1440
+    expect(calculateVolume(entries)).toBe(1440)
   })
 
   it('handles zero weight or reps', () => {
     const entries = [
       {
         sets: [
-          { weight: 0, reps: 10, completed: true },
-          { weight: 60, reps: 0, completed: true },
+          { weight: 0, reps: 10 },
+          { weight: 60, reps: 0 },
         ],
       },
     ]
@@ -131,21 +131,21 @@ describe('calculateVolume', () => {
   it('handles multiple entries', () => {
     const entries = [
       {
-        sets: [{ weight: 100, reps: 5, completed: true }],
+        sets: [{ weight: 100, reps: 5 }],
       },
       {
-        sets: [{ weight: 50, reps: 10, completed: true }],
+        sets: [{ weight: 50, reps: 10 }],
       },
     ]
     // 100*5 + 50*10 = 500 + 500 = 1000
     expect(calculateVolume(entries)).toBe(1000)
   })
 
-  it('handles entries with no completed sets', () => {
+  it('excludes sets where both weight and reps are zero', () => {
     const entries = [
       {
         sets: [
-          { weight: 100, reps: 5, completed: false },
+          { weight: 0, reps: 0 },
         ],
       },
     ]

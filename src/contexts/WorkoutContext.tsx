@@ -27,7 +27,7 @@ function createEntryFromExercise(exercise: Exercise, order: number): WorkoutEntr
     logMode: exercise.defaultLogMode,
     order,
     sets: exercise.defaultLogMode === 'sets_reps_weight'
-      ? [createDefaultSet(1), createDefaultSet(2), createDefaultSet(3)]
+      ? [createDefaultSet(1)]
       : [],
     duration: undefined,
     distance: undefined,

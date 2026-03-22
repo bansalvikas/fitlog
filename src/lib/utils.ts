@@ -40,13 +40,13 @@ export function formatDate(isoDate: string): string {
 
 /** Calculate total volume (kg × reps) for a workout */
 export function calculateVolume(
-  entries: Array<{ sets: Array<{ weight: number; reps: number; completed: boolean }> }>
+  entries: Array<{ sets: Array<{ weight: number; reps: number }> }>
 ): number {
   return entries.reduce((total, entry) => {
     return (
       total +
       entry.sets
-        .filter((s) => s.completed)
+        .filter((s) => s.weight > 0 && s.reps > 0)
         .reduce((sum, s) => sum + s.weight * s.reps, 0)
     )
   }, 0)
